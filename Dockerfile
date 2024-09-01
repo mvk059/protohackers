@@ -10,9 +10,9 @@ RUN go build -o protohackers
 
 FROM alpine:latest
 
-WORKDIR /app
+WORKDIR /
 
-COPY --from=builder /app/protohackers .
+COPY --from=builder /protohackers .
 
 # We don't EXPOSE any specific port as it's set via environment variable
 
