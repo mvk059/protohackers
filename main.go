@@ -53,12 +53,14 @@ func handleConnection(conn net.Conn) {
 		var req Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil || req.Method != "isPrime" || req.Number == "" {
 			SendMalformedResponse(conn)
+			log.Printf("Malformed request: %v", line)
 			return
 		}
 
 		num, err := req.Number.Float64()
 		if err != nil {
 			SendMalformedResponse(conn)
+			log.Printf("Malformed request number: %v", line)
 			return
 		}
 
@@ -73,12 +75,15 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
+		log.Printf("Response: %v", jsonResponse)
+
 		jsonResponse = append(jsonResponse, '\n')
 		_, err = conn.Write(jsonResponse)
 		if err != nil {
 			log.Printf("Failed to write response: %v", err)
 			return
 		}
+		log.Printf("Response n: %v", jsonResponse)
 	}
 
 	if err := scanner.Err(); err != nil {
