@@ -5,11 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"os"
-	"protohackers/app/data"
-	"protohackers/app/utils"
 )
+
+type Request struct {
+	Method string      `json:"method"`
+	Number json.Number `json:"number"`
+}
+
+type Response struct {
+	Method string `json:"method"`
+	Prime  bool   `json:"prime"`
+}
 
 func main() {
 	port := os.Getenv("PORT")
@@ -41,20 +50,20 @@ func handleConnection(conn net.Conn) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		var req data.Request
+		var req Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil || req.Method != "isPrime" || req.Number == "" {
-			utils.SendMalformedResponse(conn)
+			SendMalformedResponse(conn)
 			return
 		}
 
 		num, err := req.Number.Float64()
 		if err != nil {
-			utils.SendMalformedResponse(conn)
+			SendMalformedResponse(conn)
 			return
 		}
 
-		isPrime := utils.IsNumberPrime(num)
-		response := data.Response{
+		isPrime := IsNumberPrime(num)
+		response := Response{
 			Method: "isPrime",
 			Prime:  isPrime,
 		}
@@ -75,4 +84,27 @@ func handleConnection(conn net.Conn) {
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error reading from connection: %v", err)
 	}
+}
+
+func SendMalformedResponse(conn net.Conn) {
+	malformedResp := []byte("{\"method\":\"isPrime\",\"prime\":}\n")
+	conn.Write(malformedResp)
+}
+
+func IsNumberPrime(num float64) bool {
+	if num <= 1 || math.Floor(num) != num {
+		return false
+	}
+	if num == 2 {
+		return true
+	}
+	if math.Mod(num, 2) == 0 {
+		return false
+	}
+	for i := 3.0; i <= math.Sqrt(num); i += 2 {
+		if math.Mod(num, i) == 0 {
+			return false
+		}
+	}
+	return true
 }
