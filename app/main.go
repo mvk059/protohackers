@@ -1,19 +1,26 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", ":10000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "10000" // Default port if not specified
+	}
+
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", port))
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	defer listener.Close()
 
-	log.Println("Server listening on :10000")
+	log.Printf("Server listening on 0.0.0.0:%s", port)
 
 	for {
 		conn, err := listener.Accept()
