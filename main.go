@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
+	"protohackers/app/data"
+	"protohackers/app/utils"
 )
 
 func main() {
@@ -34,9 +37,42 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	_, err := io.Copy(conn, conn)
-	if err != nil {
-		log.Printf("Failed to copy: %v", err)
-		return
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		var req data.Request
+		if err := json.Unmarshal([]byte(line), &req); err != nil || req.Method != "isPrime" || req.Number == "" {
+			utils.SendMalformedResponse(conn)
+			return
+		}
+
+		num, err := req.Number.Float64()
+		if err != nil {
+			utils.SendMalformedResponse(conn)
+			return
+		}
+
+		isPrime := utils.IsNumberPrime(num)
+		response := data.Response{
+			Method: "isPrime",
+			Prime:  isPrime,
+		}
+		jsonResponse, err := json.Marshal(response)
+		if err != nil {
+			log.Printf("Failed to marshal response: %v", err)
+			return
+		}
+
+		jsonResponse = append(jsonResponse, '\n')
+		_, err = conn.Write(jsonResponse)
+		if err != nil {
+			log.Printf("Failed to write response: %v", err)
+			return
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error reading from connection: %v", err)
 	}
 }
