@@ -5,8 +5,11 @@ WORKDIR /
 # Copy the source code
 COPY main.go .
 
+# List contents of the directory (for debugging)
+RUN ls -la
+
 # Build the application
-RUN go build -o protohackers
+RUN go build -o protohackers main.go
 
 FROM alpine:latest
 
