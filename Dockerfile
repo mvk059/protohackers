@@ -1,13 +1,13 @@
 FROM golang:1.20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /
 COPY . .
 RUN go build -o main .
 
 FROM alpine:latest
 
-WORKDIR /root/
-COPY --from=builder /app/main .
+WORKDIR /
+COPY --from=builder /main .
 
 EXPOSE 10000
 
