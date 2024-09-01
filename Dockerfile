@@ -2,19 +2,18 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod ./
-RUN go mod download
+# Copy the source code
+COPY main.go .
 
-COPY *.go ./
-
-RUN go build -o tcp-server main.go
+# Build the application
+RUN go build -o protohackers
 
 FROM alpine:latest
 
-WORKDIR /root/
+WORKDIR /app
 
-COPY --from=builder /app/tcp-server ./
+COPY --from=builder /app/protohackers .
 
-EXPOSE 10000
+# We don't EXPOSE any specific port as it's set via environment variable
 
-CMD ["./tcp-server"]
+CMD ["./protohackers"]
