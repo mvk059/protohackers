@@ -52,19 +52,19 @@ func handleConnection(conn net.Conn) {
 		line := scanner.Text()
 		var req Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil || req.Method != "isPrime" || req.Number == "" {
-			SendMalformedResponse(conn)
+			sendMalformedResponse(conn)
 			log.Printf("Malformed request: %v", line)
 			return
 		}
 
 		num, err := req.Number.Float64()
 		if err != nil {
-			SendMalformedResponse(conn)
+			sendMalformedResponse(conn)
 			log.Printf("Malformed request number: %v", line)
 			return
 		}
 
-		isPrime := IsNumberPrime(num)
+		isPrime := isPrime(int(num))
 		response := Response{
 			Method: "isPrime",
 			Prime:  isPrime,
@@ -90,23 +90,25 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func SendMalformedResponse(conn net.Conn) {
+func sendMalformedResponse(conn net.Conn) {
 	malformedResp := []byte("{\"method\":\"isPrime\",\"prime\":}\n")
 	conn.Write(malformedResp)
 }
 
-func IsNumberPrime(num float64) bool {
-	if num <= 1 || math.Floor(num) != num {
+func isPrime(n int) bool {
+	if n <= 1 {
 		return false
 	}
-	if num == 2 {
+	if n <= 3 {
 		return true
 	}
-	if math.Mod(num, 2) == 0 {
+	if n%2 == 0 || n%3 == 0 {
 		return false
 	}
-	for i := 3.0; i <= math.Sqrt(num); i += 2 {
-		if math.Mod(num, i) == 0 {
+
+	limit := int(math.Sqrt(float64(n)))
+	for i := 5; i <= limit; i += 6 {
+		if n%i == 0 || n%(i+2) == 0 {
 			return false
 		}
 	}
