@@ -50,35 +50,45 @@ func handleConnection(conn net.Conn) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		log.Printf("Received request: %s", line)
+
 		var req Request
-		if err := json.Unmarshal([]byte(line), &req); err != nil || req.Method != "isPrime" || req.Number == "" {
+		if err := json.Unmarshal([]byte(line), &req); err != nil {
+			log.Printf("Malformed JSON: %v", err)
 			sendMalformedResponse(conn)
-			log.Printf("Malformed request: %v", line)
+			return
+		}
+
+		if req.Method != "isPrime" {
+			log.Printf("Invalid method: %s", req.Method)
+			sendMalformedResponse(conn)
+			return
+		}
+
+		if req.Number == "" {
+			log.Printf("Missing number field")
+			sendMalformedResponse(conn)
 			return
 		}
 
 		num, err := req.Number.Float64()
 		if err != nil {
+			log.Printf("Invalid number: %v", err)
 			sendMalformedResponse(conn)
-			log.Printf("Malformed request number: %v", line)
 			return
 		}
 
 		isPrime := isPrime(int(num))
-		response := Response{
-			Method: "isPrime",
-			Prime:  isPrime,
-		}
-		jsonResponse, err := json.Marshal(response)
+		resp := Response{Method: "isPrime", Prime: isPrime}
+		jsonResp, err := json.Marshal(resp)
 		if err != nil {
 			log.Printf("Failed to marshal response: %v", err)
 			return
 		}
 
-		log.Printf("Response: %v for request: %v", response, line)
-
-		jsonResponse = append(jsonResponse, '\n')
-		_, err = conn.Write(jsonResponse)
+		jsonResp = append(jsonResp, '\n')
+		log.Printf("Sending response: %s", string(jsonResp))
+		_, err = conn.Write(jsonResp)
 		if err != nil {
 			log.Printf("Failed to write response: %v", err)
 			return
@@ -92,6 +102,7 @@ func handleConnection(conn net.Conn) {
 
 func sendMalformedResponse(conn net.Conn) {
 	malformedResp := []byte("{\"method\":\"isPrime\",\"prime\":}\n")
+	log.Printf("Sending malformed response: %s", string(malformedResp))
 	conn.Write(malformedResp)
 }
 
