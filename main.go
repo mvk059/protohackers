@@ -75,7 +75,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		log.Printf("Response: %v", jsonResponse)
+		log.Printf("Response: %v for request: %v", response, line)
 
 		jsonResponse = append(jsonResponse, '\n')
 		_, err = conn.Write(jsonResponse)
@@ -83,7 +83,6 @@ func handleConnection(conn net.Conn) {
 			log.Printf("Failed to write response: %v", err)
 			return
 		}
-		log.Printf("Response n: %v", jsonResponse)
 	}
 
 	if err := scanner.Err(); err != nil {
